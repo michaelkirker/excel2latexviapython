@@ -37,7 +37,10 @@ The following features are on the to-do list for the near term.
 - Control for merged cells
 - Different line thicknesses
 - Ignore empty cells for hrule etc choices
-- backgound & text color
+	- Now will make this handle rules across only part of the table
+- background & text color
+- Move to pure python script
+- Make a standalone program
 
 
 ## Notes on running the code ##
@@ -51,3 +54,8 @@ It appears that you can have the Excel Workbook open when running the code and i
 
 
 Cant leave empty looking cells elsewhere
+
+
+
+
+## Example ##
