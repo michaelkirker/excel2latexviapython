@@ -1,5 +1,7 @@
 # Excel2LaTeXviaPython #
 
+ALPHA RELEASE - NOT READY FOR THE PUBLIC YET
+
 Creating good looking tables within LaTeX is a time consuming process. Software like Excel is much better suited to producing nicely formatted tables quickly and easily. The python code in this repository allows you to use Excel to design and format your tables, and then produce the LaTeX code to replicate those table in your LaTeX document.
 
 There already exists an Excel add-in ([Excel2LaTeX](https://www.ctan.org/tex-archive/support/excel2latex/) )that can produce LaTeX tables from Excel files. My approach has the following advantages over this previous approach:
@@ -44,13 +46,14 @@ The following features are on the to-do list for the near term.
 
 
 - background & text color
-- Made the code a stand-alone progrma
+- Made the code a stand-alone program
 	- Move from a Jupyter notebook to a standard Python script file
 	- Look at possibly doing a simple GUI to take the user's inputs
 - Allow for Multirows (vertically merged cells)
 - Some sort of log file for when the code runs into problems with your excel file.
 	- Error checking of the file to make sure the code will run properly
 - Improve the formatting/readability of the produced LaTeX code by automatically adjusting the number of tabs each used to separate the columns in each row.
+- Automatically adjust for special characters (like greater than sign).
 
 ## Notes on running the code ##
 
