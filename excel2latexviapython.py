@@ -1,4 +1,8 @@
-
+# EXCEL TO LATEX VIA PYTHON
+########################################################################################################################
+#
+# This code takes an excel file with tables in each worksheet and outputs the TeX code for each table as a separate file
+# ready to be imported into a LaTeX document.
 
 
 # USER INPUT AND SETTINGS
@@ -6,11 +10,11 @@
 #
 
 # Define the path of the excel file containing all the tables
-input_excel_filename = 'D:/Users/Kirker/Dropbox/My research/ProductivitySpilloverNZ/LaTeX/Paper/tables/prod_spillover_tables_4_paper.xlsx'
+input_excel_filename = 'D:/Users/Kirker/Dropbox/My research/ProductivitySpilloverNZ/LaTeX/Paper/tables/' +  \
+                       'prod_spillover_tables_4_paper.xlsx'
 
 # Select the directory/folder to save the resulting TeX files to
 output_dir = 'D:/Users/Kirker/Dropbox/My research/ProductivitySpilloverNZ/LaTeX/Paper/tables/'
-
 
 # Define user settings in a dictionary
 # ------------------------------------
@@ -34,10 +38,6 @@ usr_settings = {'booktabs': True, 'includetabular': True, 'roundtodp': True, 'nu
 
 # End of user input
 # ======================================================================================================================
-
-
-
-
 
 # PREAMBLE
 # ======================================================================================================================
@@ -74,10 +74,12 @@ print('Creating TeX tables:')
 
 for sheet_name in workbook.get_sheet_names():  # Loop over every worksheet (tab) within the workbook
 
-    print('    ' + sheet_name + '.tex')  # Print the name of the table file that is being created this iteration
-
     # Get the worksheet object for this iteration
     sheet = workbook[sheet_name]
+
+    # Print the name of the table file that is being created this iteration and the excel cells being used to create it
+    print('    ' + sheet_name + '.tex    ' + sheet.rows[0][0].column + str(sheet.rows[0][0].row) + ':'
+          + sheet.rows[-1][-1].column + str(sheet.rows[-1][-1].row))
 
     # Find any merged cells within this particular worksheet
     merged_details_list = e2l.get_merged_cells(sheet)
@@ -87,7 +89,7 @@ for sheet_name in workbook.get_sheet_names():  # Loop over every worksheet (tab)
 
     # If the user requested the booktabs options, add a reminder (as a LaTeX comment) to the top of the table that the
     # user will need to load up the package in the preamble of their file.
-    if usr_settings['booktabs'] == True:
+    if usr_settings['booktabs']:
         file.write('% Note: make sure \\usepackage{booktabs} is included in the preamble \n')
 
 
@@ -132,18 +134,19 @@ for sheet_name in workbook.get_sheet_names():  # Loop over every worksheet (tab)
         hrule_str = e2l.create_horzrule_code(sheet.rows[row_num], 'top', usr_settings, top_row=False, bottom_row=False)
 
         # If using booktabs, and this is the first row, use toprule rather than midrule
-        if (row_num == 0) & (usr_settings['booktabs'] == True):
+        if (row_num == 0) & usr_settings['booktabs']:
             hrule_str = hrule_str.replace('\\midrule', '\\toprule')
 
         file.write(hrule_str)
 
 
         # Get string of rows contents
-        str_2_write = e2l.tupple2latexstring(sheet.rows[row_num], [merge_start_cols, merge_end_cols, merge_match_det])
+        str_2_write = e2l.tupple2latexstring(sheet.rows[row_num], usr_settings, [merge_start_cols, merge_end_cols, merge_match_det])
 
+        # This is now done inside of tupple2latexstring to avoid rounding color hex numbers
         # If we need to round numbers in the row, do so
-        if usr_settings['roundtodp']:
-            str_2_write = e2l.round_num_in_str(str_2_write, usr_settings['numdp'])
+        #if usr_settings['roundtodp']:
+        #    str_2_write = e2l.round_num_in_str(str_2_write, usr_settings['numdp'])
 
         # Write row string to file
         file.write(str_2_write)
