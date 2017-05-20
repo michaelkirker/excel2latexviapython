@@ -33,6 +33,20 @@ def is_number(s):
         return False
 
 
+
+def cell_is_value(s, search=re.compile(r'[^0-9\*\.()-]').search):
+    """
+    We only want to round numbers in the table if it is comes from a cell that is only a number, and not from any 
+    potential table headers cells than contain a number. So check to see if the cell cointains only" numbers, decimal 
+    points, parenthesis, and astricks. In which case, return yes
+    
+    
+    :param s: 
+    :return: True/False: Answers if "s" is from a cell primarially a number 
+    """
+
+    return not bool(search(s))
+
 def clean_cell_str(s):
     """
     CLEAN_CELL_STR
@@ -121,7 +135,11 @@ def tupple2latexstring(row_tup, usr_settings, merge_list=[[], [], []]):
 
                 # Get content of cell, and if needed, apply the d.p. rounding rule to the content.
                 if usr_settings['roundtodp']:
-                    value_string = round_num_in_str(clean_cell_str(str(row_tup[colidx].value)), usr_settings['numdp'])
+
+                    if cell_is_value(str(row_tup[colidx].value)):
+                        value_string = round_num_in_str(clean_cell_str(str(row_tup[colidx].value)), usr_settings['numdp'])
+                    else:
+                        value_string = clean_cell_str(str(row_tup[colidx].value))
                 else:
                     value_string = clean_cell_str(str(row_tup[colidx].value))
 
@@ -509,7 +527,7 @@ def round_num_in_str(str_in, num_dp):
     str_out = str_in
 
     # Extract a list of all numbers in the string
-    list_found_num_str = re.findall("\d+[\.]?\d*", str_in)
+    list_found_num_str = re.findall("\d+[\.]\d*", str_in) # Add a question mark behind the "]" to round all numbers (even those without a DP)
 
     # Create a list of the found numbers rounded to the appropriate d.p.
     list_rounded_nums = [round(float(s), num_dp) for s in list_found_num_str]
@@ -519,3 +537,35 @@ def round_num_in_str(str_in, num_dp):
         str_out = re.sub(list_found_num_str[ii], str(list_rounded_nums[ii]), str_out)
 
     return str_out
+
+
+def all_nones(iterable):
+    """
+    Tells us if every value within the tuple iterable is None (missing)
+    :param iterable: 
+    :return: 
+    """
+
+    for element in iterable:
+        if not element.value == None:
+            return False
+    return True
+
+
+def create_column(table_in, col_idx):
+    '''
+    Only works for square tables
+    
+    :param table_in: 
+    :return: 
+    '''
+
+    nrows = len(table_in)
+
+    col = []
+
+    for ii in range(0, nrows):
+
+        col += [table_in[ii][col_idx]]
+
+    return tuple(col)
