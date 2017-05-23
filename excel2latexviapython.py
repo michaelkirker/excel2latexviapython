@@ -54,7 +54,7 @@ print('Creates .TeX table files from excel file.')
 print('Source file: ' + input_excel_filename)
 
 # Load in the Excel workbook/file
-workbook = openpyxl.load_workbook(filename=input_excel_filename)
+workbook = openpyxl.load_workbook(filename=input_excel_filename, data_only = True)
 
 print(' ')
 print('Output directory: ' + output_dir)
