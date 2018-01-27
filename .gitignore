@@ -91,3 +91,6 @@ ENV/
 
 # Tex files
 .tex
+Example/output_all_tables.out
+Example/output_all_tables.aux
+Example/output_all_tables.synctex

@@ -1,13 +1,9 @@
 # EXCEL 2 LATEX SUB-FUNCTIONS
 ########################################################################################################################
-# This library file contains all the functions used by the
+# This library file contains all the functions used by the Excel2LaTeXviaPython code
 
-
-# Preamble
-########################################################################################################################
-# Read in required libraries
-import re  # For reading and processing text strings
-import openpyxl  # For obtaining the Excel file formatting
+import re           # For reading and processing text strings
+import openpyxl     # For obtaining the Excel file formatting
 
 
 def is_number(s):
@@ -33,19 +29,23 @@ def is_number(s):
         return False
 
 
-
-def cell_is_value(s, search=re.compile(r'[^0-9\*\.()-]').search):
+def cell_is_value(s, search=re.compile(r'[^0-9\*\.()+-eE]').search):
     """
     We only want to round numbers in the table if it is comes from a cell that is only a number, and not from any 
-    potential table headers cells than contain a number. So check to see if the cell cointains only" numbers, decimal 
-    points, parenthesis, and astricks. In which case, return yes
+    potential table headers cells than contain a number. So check to see if the cell contains only numbers, decimal
+    points, parenthesis, asterisk. In which case, return yes. These other terms are included as often tables report
+    standard errors in parenthesis or include asterisk to denote statistical significance.
+
+    I added "e" and "E" into the list of characters to allow for scientific notation. Currently the code rounds off
+    scientific notation to the specified number of DPs. Should probably create a setting to allow for scientific
+    notation to be preserved.
     
-    
-    :param s: 
-    :return: True/False: Answers if "s" is from a cell primarially a number 
+    :param s: string of a number that is to be rounded
+    :return: True/False: Answers if "s" is from a cell primarily a number
     """
 
     return not bool(search(s))
+
 
 def clean_cell_str(s):
     """
@@ -68,13 +68,13 @@ def clean_cell_str(s):
         return s
 
 
-def tupple2latexstring(row_tup, usr_settings, merge_list=[[], [], []]):
+def tupple2latexstring(row_tup, usr_settings, merge_list):
     """
     TUPPLE2LATEXSTRING
 
     This function converts a tupple of openpyxl CELLs into a single row string
-    of LaTeX code for inclusion in a table. It loops over each cell and appends
-    the appropriate text (respresenting the LaTeX code) to the string which it
+    of LaTeX code for inclusion in the table. It loops over each cell and appends
+    the appropriate text (representing the LaTeX code) to the string which it
     returns at the end.
 
 
@@ -82,7 +82,7 @@ def tupple2latexstring(row_tup, usr_settings, merge_list=[[], [], []]):
         row_tup: [tupple] contains the openpyxl CELLs for a single row of the table
 
 
-        merged_details_list
+        merged_list = list of cells in the row that are merged together
 
 
     Returns:
@@ -98,12 +98,10 @@ def tupple2latexstring(row_tup, usr_settings, merge_list=[[], [], []]):
     merge_end_cols = merge_list[1]
     merge_match_det = merge_list[2]
 
-    num_multi_in_row = len(merge_start_cols)
-
     colidx = 0
     multiidx = 0
 
-    while colidx < num_elements:  # for each column/cell
+    while colidx < num_elements:  # for each column/cell in the tupple for the row
 
         # Check to see if the column/cell is part of a multicolumn/row
 
@@ -117,7 +115,6 @@ def tupple2latexstring(row_tup, usr_settings, merge_list=[[], [], []]):
 
             multiidx += 1
 
-
         else:
             # Get the main text for that cell.
 
@@ -126,13 +123,11 @@ def tupple2latexstring(row_tup, usr_settings, merge_list=[[], [], []]):
             #########
 
             if row_tup[colidx].value == None:
-
                 # In this case, the cell is empty, so
 
                 value_string = " "  # Cell is empty of value
 
             else:  # Case when the cell contains something
-
                 # Get content of cell, and if needed, apply the d.p. rounding rule to the content.
                 if usr_settings['roundtodp']:
 
@@ -150,7 +145,6 @@ def tupple2latexstring(row_tup, usr_settings, merge_list=[[], [], []]):
             # The cell might have special formatting applied to the value inside it (e.g. bold text).
             # Apply the LaTeX version of this formatting to the string
 
-
             # Apply bold font if needed
             if row_tup[colidx].font.__dict__['b']:
                 value_string = "\\textbf{" + value_string + "}"
@@ -159,11 +153,20 @@ def tupple2latexstring(row_tup, usr_settings, merge_list=[[], [], []]):
             if row_tup[colidx].font.__dict__['i']:
                 value_string = "\\textit{" + value_string + "}"
 
-            # Font color
-            if type(row_tup[colidx].font.color.rgb) == str:
-                # non-edited cells dont return a string, so only define color for cells where user has specifically
-                # selected a color
+            # Apply font color
+            if isinstance(row_tup[colidx].font.color.rgb, str):
                 value_string = "\\textcolor[HTML]{" + row_tup[colidx].font.color.rgb[2:] + "}{" + value_string + "}"
+
+            # Cell background color
+            if isinstance(row_tup[colidx].fill.start_color.index, int):  # built in color
+
+                # Currently cannot handle this case
+                value_string = value_string
+
+            else:
+
+                if row_tup[colidx].fill.start_color.index is not '00000000':
+                    value_string = "\\cellcolor[HTML]{" + row_tup[colidx].fill.start_color.index[2:] + "}{" + value_string + "}"
 
         #########
         # Step 3: Now that we have to LaTeX code for that cell/column, append it to the string for the entire row.
@@ -240,15 +243,8 @@ def create_cline_code(cell_has_rule, booktabs=False):
         A string containing the code needed to draw the horizontal lines. E.g. "\cmidrule(r){1-4} \cmidrule(r){6-9} \n"
     """
 
-    # Initialize the output string based upon which table style we are doing
-
-    # if booktabs == True:
-    #    str_out = '\\cmidrule(r)'
-    # else:
-    #    str_out = '\\cline'
+    # Initialize the output string
     str_out = ''
-
-    # Loop over each element of cell_has_rule to find where the lines start/stop
 
 
     num_column = len(cell_has_rule)  # How many elements in the row
@@ -308,7 +304,7 @@ def create_cline_code(cell_has_rule, booktabs=False):
     return (str_out)
 
 
-def create_horzrule_code(row_tup, loc, usr_settings, top_row=False, bottom_row=False):
+def create_horzrule_code(row_tup, loc, merge_start_cols, merge_end_cols, usr_settings, top_row=False, bottom_row=False):
     """
     CREATE_HORZRULE_CODE
 
@@ -322,6 +318,8 @@ def create_horzrule_code(row_tup, loc, usr_settings, top_row=False, bottom_row=F
 
         loc: [string] either 'top' or 'bottom' to indicate where (relative to this particular
                 row) we should check for any horizontal lines
+
+        row_merged_details_list: [list] details of where any merged cells start and end. Only the first cell contains the boarder info, so we copy that to all merged cells.
 
         usr_settings: [dictionary] user settings - tells us to use booktabs code or not.
 
@@ -350,12 +348,27 @@ def create_horzrule_code(row_tup, loc, usr_settings, top_row=False, bottom_row=F
 
     cell_has_rule = []  # Pre-allocate list
 
+
+
     for colnum in range(0, num_column):
 
-        if row_tup[colnum].border.__dict__[loc].border_style != None:
-            cell_has_rule.append(True)
+        # Check to see if column is a subsequent merged column (and hence doesnt have rule information for)
+        cond_1 = [ colnum > x for x in merge_start_cols]
+        cond_2 = [colnum  <= x for x in merge_end_cols]
+
+        cond_combine = []
+        for i in range(0, len(cond_1)):
+            cond_combine.append(cond_1[i] is True and cond_2[i] is True)
+
+        if any(x is True for x in cond_combine):  # cell is a subsequent merged cell
+            cell_has_rule.append(cell_has_rule[-1])
+
         else:
-            cell_has_rule.append(False)
+
+            if row_tup[colnum].border.__dict__[loc].border_style != None:
+                cell_has_rule.append(True)
+            else:
+                cell_has_rule.append(False)
 
     if sum(cell_has_rule) == 0:  # If there are no rules and any cell, there is no line here, so return a blank string
 
@@ -385,11 +398,11 @@ def create_horzrule_code(row_tup, loc, usr_settings, top_row=False, bottom_row=F
         else:
 
             if sum(cell_has_rule) == num_column:
-                return ('\hline \n')
+                return '\hline \n'
 
             else:
 
-                return (create_cline_code(cell_has_rule, booktabs=False))
+                return create_cline_code(cell_has_rule, booktabs=False)
 
 
 def get_merged_cells(sheet):
@@ -529,12 +542,20 @@ def round_num_in_str(str_in, num_dp):
     # Extract a list of all numbers in the string
     list_found_num_str = re.findall("\d+[\.]\d*", str_in) # Add a question mark behind the "]" to round all numbers (even those without a DP)
 
-    # Create a list of the found numbers rounded to the appropriate d.p.
-    list_rounded_nums = [round(float(s), num_dp) for s in list_found_num_str]
 
-    for ii in range(0, len(list_found_num_str)):
+    list_found_scientific_num_str = re.findall("\d+[\.]*\d*e[+-]\d*", str_in)
+
+    list_found = list_found_num_str + list_found_scientific_num_str
+
+    # Create a list of the found numbers rounded to the appropriate d.p.
+    list_nums = [float(s) for s in list_found]
+
+    str_format = '%.' + str(num_dp) + 'f'
+
+    for ii in range(0, len(list_found)):
         # For each number found, substitute in the rounded number
-        str_out = re.sub(list_found_num_str[ii], str(list_rounded_nums[ii]), str_out)
+        str_out = re.sub(list_found[ii], str_format % list_nums[ii], str_out)
+
 
     return str_out
 
@@ -547,25 +568,96 @@ def all_nones(iterable):
     """
 
     for element in iterable:
-        if not element.value == None:
+        if not element.value is None:
             return False
     return True
 
 
+def get_table_dimensions(sheet):
+    """
+    GET_TABLE_DIMENSIONS
+
+    The table within the sheet may not start in cell A1. This function finds the location of the table within the sheet
+    by looking for the upper-left and bottom-right most cells that have content. It returns the location of these two
+    corner cells.
+
+    :param sheet: Excel worksheet object
+    :return:    start_row_idx: row number of the upper-left most cell that contains something
+                start_col_idx: column number of the upper-left most cell that contains something
+                end_row_idx: row number of the bottom-right most cell that contains something
+                end_col_idx: column number of the bottom-right most cell that contains something
+    """
+
+    # Pre-allocate starting indices
+    start_col_idx = 0
+    start_row_idx = 0
+
+    # Pre-allocate end indices (adjust for python starting index at zero, and Excel starting at 1)
+    end_col_idx = sheet.max_column - 1
+    end_row_idx = sheet.max_row - 1
+
+    # Trim off any empty columns at the end of the table
+    for col_num in range(sheet.max_column - 1, -1, -1):
+
+        if all_nones(list(sheet.columns)[col_num]):
+            # Trim the column for the sheet
+            end_col_idx = end_col_idx - 1
+        else:
+            # current final column has a value so stop trimming
+            break
+
+    # Trim off any empty rows at the end of the table
+    for row_num in range(sheet.max_row - 1, -1, -1):
+
+        if all_nones(list(sheet.rows)[row_num]):
+            # Trim the column for the sheet
+            end_row_idx = end_row_idx - 1
+        else:
+            # current final column has value so stop trimming
+            break
+
+    # Trim off any empty columns at the start of the table
+    for col_num in range(0, sheet.max_column):
+
+        if all_nones(list(sheet.columns)[col_num]):
+            # Trim the column for the sheet
+            start_col_idx = start_col_idx + 1
+        else:
+            # current final column has value so stop trimming
+            break
+
+    # Trim off any empty rows at the start of the table
+    for row_num in range(0, sheet.max_row):
+
+        if all_nones(list(sheet.rows)[row_num]):
+            # Trim the column for the sheet
+            start_row_idx = start_row_idx + 1
+        else:
+            # current final column has value so stop trimming
+            break
+
+    return start_row_idx, start_col_idx, end_row_idx, end_col_idx
+
+
 def create_column(table_in, col_idx):
-    '''
-    Only works for square tables
-    
-    :param table_in: 
-    :return: 
-    '''
+    """
+    CREATE_COLUMN
 
-    nrows = len(table_in)
+    Takes a table and returns a tuple containing only a single column of the table. Useful for analysing a single
+    column of the table
 
-    col = []
 
-    for ii in range(0, nrows):
+    :param table_in: table to extract column from
+    :param col_idx: index of the column to be extracted
+    :return: tuple of just column col_idx
+    """
 
-        col += [table_in[ii][col_idx]]
+    nrows = len(table_in)  # number of rows in the table
+
+    col = []  # preallocate
+
+    for row_num in range(0, nrows):
+
+        col += [table_in[row_num][col_idx]]
 
     return tuple(col)
