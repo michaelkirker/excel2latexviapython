@@ -1,5 +1,6 @@
 # EXCEL 2 LATEX SUB-FUNCTIONS
 ########################################################################################################################
+
 # This library file contains all the functions used by the Excel2LaTeXviaPython code
 
 import re           # For reading and processing text strings
@@ -29,7 +30,7 @@ def is_number(s):
         return False
 
 
-def cell_is_value(s, search=re.compile(r'[^0-9\*\.()+-eE]').search):
+def cell_is_value(s):
     """
     We only want to round numbers in the table if it is comes from a cell that is only a number, and not from any 
     potential table headers cells than contain a number. So check to see if the cell contains only numbers, decimal
@@ -44,7 +45,8 @@ def cell_is_value(s, search=re.compile(r'[^0-9\*\.()+-eE]').search):
     :return: True/False: Answers if "s" is from a cell primarily a number
     """
 
-    return not bool(search(s))
+    search_fun = re.compile(r'[^0-9*.()+-eE]').search
+    return not bool(search_fun(s))
 
 
 def clean_cell_str(s):
@@ -77,17 +79,11 @@ def tupple2latexstring(row_tup, usr_settings, merge_list):
     the appropriate text (representing the LaTeX code) to the string which it
     returns at the end.
 
+    :param row_tup: [tupple] contains the openpyxl CELLs for a single row of the table
+    :param usr_settings: [dict] user defined options
+    :param merge_list: list of cells in the row that are merged together
 
-   Args:
-        row_tup: [tupple] contains the openpyxl CELLs for a single row of the table
-
-
-        merged_list = list of cells in the row that are merged together
-
-
-    Returns:
-        A string of the row cells formatted in the LaTeX style.
-
+    :return: A string of the row cells formatted in the LaTeX style.
     """
 
     num_elements = len(row_tup)  # how many columns we have in the row
@@ -122,7 +118,7 @@ def tupple2latexstring(row_tup, usr_settings, merge_list):
             # Step 1: Get the "value_string" giving the text displayed in the cell
             #########
 
-            if row_tup[colidx].value == None:
+            if row_tup[colidx].value is None:
                 # In this case, the cell is empty, so
 
                 value_string = " "  # Cell is empty of value
@@ -132,7 +128,8 @@ def tupple2latexstring(row_tup, usr_settings, merge_list):
                 if usr_settings['roundtodp']:
 
                     if cell_is_value(str(row_tup[colidx].value)):
-                        value_string = round_num_in_str(clean_cell_str(str(row_tup[colidx].value)), usr_settings['numdp'])
+                        value_string = round_num_in_str(clean_cell_str(str(row_tup[colidx].value)),
+                                                        usr_settings['numdp'])
                     else:
                         value_string = clean_cell_str(str(row_tup[colidx].value))
                 else:
@@ -166,7 +163,8 @@ def tupple2latexstring(row_tup, usr_settings, merge_list):
             else:
 
                 if row_tup[colidx].fill.start_color.index is not '00000000':
-                    value_string = "\\cellcolor[HTML]{" + row_tup[colidx].fill.start_color.index[2:] + "}{" + value_string + "}"
+                    value_string = "\\cellcolor[HTML]{" + row_tup[colidx].fill.start_color.index[2:] + "}{" + \
+                                   value_string + "}"
 
         #########
         # Step 3: Now that we have to LaTeX code for that cell/column, append it to the string for the entire row.
@@ -195,166 +193,142 @@ def check_for_vline(col_tup, loc):
 
     We do this by looping over all the cells, and then counting how many of them have a vertical line in location "loc"
 
-    Args:
-        row_tup: [tupple] contains the openpyxl CELLs for a single row of the table
-
-
-    Returns:
-        True/False
+    :param col_tup:  [tupple] contains the openpyxl CELLs for a single row of the table
+    :param loc: [string] 'top' or 'bottom'
+    :return:
     """
 
     num_rows = len(col_tup)  # Number of rows in the column
 
-    ID = 0  # Initialise count
+    count = 0  # Initialise count
 
     for rownum in range(0, num_rows):  # For each row
 
         # Check to see if there is a border style in location "loc"
-        if col_tup[rownum].border.__dict__[loc].border_style != None:
+        if col_tup[rownum].border.__dict__[loc].border_style is not None:
             # Add one to our count
-            ID += 1
+            count += 1
 
     # Check to see if every row has a border style in location "loc"
-    if ID == num_rows:
-        return (True)
+    if count == num_rows:
+        return True
     else:
-        return (False)
+        return False
 
 # A test of the function:
 # out = check_for_vline(sheet.columns[2],'left')
 # print(out)
 
 
-def create_cline_code(cell_has_rule, booktabs=False):
+def create_cline_code(cell_has_rule_bool, booktabs=False):
     """
     CREATE_CLINE_CODE
 
-    Creates the code for horizontal lines that do not span the entire length of the table.
+    Creates the code for horizontal lines that do not span the entire length of the table, only a few cells.
 
+    :param cell_has_rule_bool: [list] whose elements are True/False for each cell indicating whether the horizontal rule
+    includes this cell.
+    :param booktabs:  True/False. Should the code return code for the booktabs package or regular LaTeX?
 
-    Args:
-        cell_has_rule: [list] whose elements are True/False for each cell indicating
-                            whether the horizontal rule includes this cell.
-
-        booktabs=False: True/False. Should the code return code for the booktabs package or regular LaTeX?
-
-
-    Returns:
-        A string containing the code needed to draw the horizontal lines. E.g. "\cmidrule(r){1-4} \cmidrule(r){6-9} \n"
+    :return: A string containing the code needed to draw the horizontal lines.
+    E.g. "\cmidrule(r){1-4} \cmidrule(r){6-9} \n"
     """
 
     # Initialize the output string
     str_out = ''
 
-
-    num_column = len(cell_has_rule)  # How many elements in the row
+    num_column = len(cell_has_rule_bool)  # How many elements in the row
 
     # Create a flag to indicate whether we are starting a new cmidrule/cline or not.
-    start_flag = 1  # we are looking for the next True
+    look_for_new_crule = True  # we are looking for the next True to start a new \cmidrule or \cline
 
     for colind in range(0, num_column):  # For each column/cell
 
-        if (cell_has_rule[colind] == True) & (start_flag == 1):
+        if (cell_has_rule_bool[colind] is True) & (look_for_new_crule is True):
+            # The current cell has a cmidrule/cline, and we are looking for the next crule. So start a new rule/line in
+            # the LaTeX code
 
-            # We are initializing a new cmidrule/cline
+            colnum = colind + 1  # column number is one more than the python index
 
-            colnum = colind + 1
-
-            if booktabs == True:
+            # Append new line/rule to str_out
+            if booktabs is True:
                 str_out += '\\cmidrule(r){' + str(colnum) + '-'
             else:
                 str_out += '\\cline{' + str(colnum) + '-'
 
-            start_flag = 0  # Turn off flag since now we are going to be looking for where this particular cline ends
+            # Turn off flag since now we are going to be looking for where this particular cline ends
+            look_for_new_crule = False
 
+            continue  # Move on to next table cell
+
+        elif (cell_has_rule_bool[colind] is False) & (look_for_new_crule is True):
+            # This is the case when we are searching for a new cline to begin, but the current table cell does not
+            # contain a crule, so we carry on looking
             continue
 
-        elif (cell_has_rule[colind] == False) & (start_flag == 1):
+        elif cell_has_rule_bool[colind] is False:
+            # We have found a column/cell without a cline (=False), and we are looking to close the currently opened
+            # cline/crule as look_for_new_crule=False (because the cases where look_for_new_crule=True are dealt with
+            # by the previous elif case). Therefore, we want to add the LaTeX code to close the current crule/cline
 
-            # This is the case when we are searching for a new cline to begin, but there is some cells where it hasnt started yet
-            str_out += ''  # do nothing
+            str_out += str(colind) + '} \t '  # colidx = colnum-1, which is the last column to include
 
+            look_for_new_crule = True  # Turn flag back on so we are searching for the next crule start
             continue
 
-        elif cell_has_rule[colind] == False:
-
-            # We have found a column/cell without a cline, so end the current open cline
-
-            str_out += str(colind) + '} \t '
-
-            start_flag = 1  # Turn flag back on so we are searching for a new cline start
-            continue
-
-        elif (cell_has_rule[colind] == True) & (colind == num_column - 1):
-
+        elif (cell_has_rule_bool[colind] is True) & (colind == num_column - 1):
             # If we get to the end of the table, and the column/cell still has a cline, end the cline.
             # last one is True
 
             str_out += str(num_column) + '} \t '
 
-        else:
-            # Code should never reach this here.
+    # The above cases exhaust all possibilities, so no need for "else" statement
 
-            str_out + ' Err in create_cline_code'
-            continue
-
-    # End the line and return the string
+    # End the LaTeX line and return the string
     str_out += ' \n'
 
-    return (str_out)
+    return str_out
 
 
-def create_horzrule_code(row_tup, loc, merge_start_cols, merge_end_cols, usr_settings, top_row=False, bottom_row=False):
+def create_horzrule_code(row_tup, loc, merge_start_cols, merge_end_cols, usr_settings):
     """
     CREATE_HORZRULE_CODE
 
-    Creates the code for horizontal lines in a particular row of the table. Will return
-    a string of LaTeX code that is either a horizontal line spanning the entire width of
-    the table, or code to make the horizontal line(s) span only part of the table.
+    Create LaTeX code for horizontal lines, above or below (defined by 'loc'), that particular row_tup.
+
+    Horizontal lines may either span the entire width of the table, or along a few columns.
 
 
     Args:
-        row_tup: [tuple] containing a row of the table.
+        row_tup: [tuple] a particular row of cells.
 
         loc: [string] either 'top' or 'bottom' to indicate where (relative to this particular
-                row) we should check for any horizontal lines
+                row) we should check for any horizontal lines.
 
-        row_merged_details_list: [list] details of where any merged cells start and end. Only the first cell contains the boarder info, so we copy that to all merged cells.
+        merge_start_cols: [list] the row numbers related to where merged cells start.
 
-        usr_settings: [dictionary] user settings - tells us to use booktabs code or not.
+        merge_end_cols: [list] the row numbers related to where merged cells stop.
 
+        usr_settings: [dictionary] user settings - tells us whether to use booktabs code or not.
 
 
     Returns:
-        A string containing the code needed to draw the horizontal line(s) for that particular row.
+        A string containing the LaTeX code needed to draw the horizontal line(s) for that particular row.
     """
 
-    '''
-    Inputs:
-    * row_tup : tupple containing the excel row
+    num_column = len(row_tup)  # number of columns/elements in this particular row
 
-    * loc : String , either 'top' or 'bottom'
-
-    * usr_settings : dirctionary, so we know if the user wants booktabs
-    '''
-
-    num_column = len(row_tup)
-
-    #########
     # Step 1: Find which cells have horizontal rules
-    #########
-
-    # Contruct a list with True/False elements to indicate if the horizontal rule applies to that cell.
+    # Construct a list with True/False elements to indicate if the horizontal rule applies to that cell.
 
     cell_has_rule = []  # Pre-allocate list
 
+    for colnum in range(0, num_column):  # for each column in the row
 
-
-    for colnum in range(0, num_column):
-
-        # Check to see if column is a subsequent merged column (and hence doesnt have rule information for)
-        cond_1 = [ colnum > x for x in merge_start_cols]
-        cond_2 = [colnum  <= x for x in merge_end_cols]
+        # Check to see if this particular column falls within the span of merged cells
+        # If so, we can ignore it, and use the details from the first cell of the merged cells
+        cond_1 = [colnum > x for x in merge_start_cols]
+        cond_2 = [colnum <= x for x in merge_end_cols]
 
         cond_combine = []
         for i in range(0, len(cond_1)):
@@ -365,47 +339,47 @@ def create_horzrule_code(row_tup, loc, merge_start_cols, merge_end_cols, usr_set
 
         else:
 
-            if row_tup[colnum].border.__dict__[loc].border_style != None:
+            if row_tup[colnum].border.__dict__[loc].border_style is not None:
                 cell_has_rule.append(True)
             else:
                 cell_has_rule.append(False)
 
     if sum(cell_has_rule) == 0:  # If there are no rules and any cell, there is no line here, so return a blank string
 
-        return ('')
+        return ''
 
     else:  # There exists some horizontal rule on at least part of the row, so return the appropriate LaTeX code
 
-
-
-
         # If user has specified booktabs
-        if usr_settings['booktabs'] == True:
+        if usr_settings['booktabs'] is True:
 
             if sum(cell_has_rule) == num_column:
-
-                return ('\midrule \n')
-
+                return '\midrule \n'
             else:
-
-                return (create_cline_code(cell_has_rule, booktabs=True))
-
-
-
-
-
+                return create_cline_code(cell_has_rule, booktabs=True)
 
         else:
 
             if sum(cell_has_rule) == num_column:
                 return '\hline \n'
-
             else:
-
                 return create_cline_code(cell_has_rule, booktabs=False)
 
 
 def get_merged_cells(sheet):
+    """
+    GET_MERGED_CELLS
+
+    Locate all the merged cells within a sheet, return the row and column locations of the start and end, and also
+    return the LaTeX code for the merged cells.
+
+    :param sheet: [tuple] openpyxl excel worksheet object
+
+    :return: list containing (1) index of the rows of each merged cells first cell, (2) index of the column of each
+    merged cell first cell, (3) index of the columns of each moerged cells last cell, (4) index of the column of each
+    merged cell last cel, (5) LaTeX code for the
+    """
+
     start_row = []
     start_col = []
 
@@ -415,15 +389,12 @@ def get_merged_cells(sheet):
     latex_code = []
 
     if len(sheet.merged_cell_ranges) == 0:
-        return ([[], [], [], [], []])
+        return [[], [], [], [], []]  # No merged cells, so retrun an empty list
 
     for merge_ in sheet.merged_cell_ranges:  # For each merge in the sheet
 
         # Split the location string of the merge, and convert it it to an index number (e.g. "A3")
         merge_loc_str = re.split(':', merge_)
-
-        merge_cell_start_str = merge_loc_str[0]
-        merge_cell_end_str = merge_loc_str[1]
 
         # convert string to col/row index numbers
         start_coord = openpyxl.utils.coordinate_to_tuple(merge_loc_str[0])
@@ -436,8 +407,6 @@ def get_merged_cells(sheet):
         end_col.append(end_coord[1] - 1)
 
         value_string = sheet[merge_loc_str[0]].value
-
-        ###HERE###
 
         if sheet[merge_loc_str[0]].font.__dict__['b']:
             value_string = "\\textbf{" + value_string + "}"
@@ -540,10 +509,10 @@ def round_num_in_str(str_in, num_dp):
     str_out = str_in
 
     # Extract a list of all numbers in the string
-    list_found_num_str = re.findall("\d+[\.]\d*", str_in) # Add a question mark behind the "]" to round all numbers (even those without a DP)
+    list_found_num_str = re.findall("\d+[.]\d*", str_in)  # Add a question mark behind the "]" to round all numbers
+    # (even those without a DP)
 
-
-    list_found_scientific_num_str = re.findall("\d+[\.]*\d*e[+-]\d*", str_in)
+    list_found_scientific_num_str = re.findall("\d+[.]*\d*e[+-]\d*", str_in)
 
     list_found = list_found_num_str + list_found_scientific_num_str
 
@@ -556,7 +525,6 @@ def round_num_in_str(str_in, num_dp):
         # For each number found, substitute in the rounded number
         str_out = re.sub(list_found[ii], str_format % list_nums[ii], str_out)
 
-
     return str_out
 
 
@@ -568,7 +536,7 @@ def all_nones(iterable):
     """
 
     for element in iterable:
-        if not element.value is None:
+        if element.value is not None:
             return False
     return True
 
