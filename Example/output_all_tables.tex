@@ -1,77 +1,28 @@
 \documentclass[12pt]{article}
 
-%=====================================================================================%
-% PACKAGES
-%=====================================================================================%
-\usepackage[cm]{fullpage}
-\usepackage{parskip}
-
-\usepackage{amsmath}
-\usepackage{amsfonts}
-\usepackage{amssymb}
 \usepackage{booktabs}
 \usepackage[table]{xcolor}
-\usepackage{amsthm}
-	\newtheorem{proposition}{Proposition}
-	\newtheorem{definition}{Definition}
-	\newtheorem{assumption}{Assumption}
-	\newtheorem{lemma}{Lemma}
-	\newtheorem{theorem}{Theorem}
+\usepackage{parskip}
 
-\renewcommand{\qedsymbol}{Q.E.D.}
-
-
-\usepackage[authoryear]{natbib}
-\usepackage{hyperref}
-
-\usepackage{setspace}
-	%\singlespace
-	\doublespacing
-	%\onehalfspacing
-
-\usepackage{lineno}
-%	\linenumbers
-
-%\usepackage{lscape}
-\usepackage{pdflscape}
-
-\usepackage{graphics}
-\usepackage{graphicx}
-\usepackage{subfig}
-
-
-\usepackage{tikz}
-	\usetikzlibrary{calc, shapes, backgrounds}
-
-
-%=====================================================================================%
 \begin{document}
-%=====================================================================================%
 
-
-\title{All graphs}
-\author{Michael Kirker\thanks{\href{mailto:mkirker@uchicago.edu}{mkirker@uchicago.edu}}}
-\date{\today}
-%\maketitle
-
-
-
-%\tableofcontents
-%=====================================================================================%
-
-
-\input{simple_table.tex}
+Table: color
 
 \input{color.tex}
 
+\newpage
+Table: simple\_table
+
+\input{simple_table.tex}
+
+\newpage
+Table: merged\_cells
+
 \input{merged_cells.tex}
+
+\newpage
+Table: styled\_table
 
 \input{styled_table.tex}
 
-\input{wide_table.tex}
-
-
-
-%=====================================================================================%
-%=====================================================================================%
 \end{document}

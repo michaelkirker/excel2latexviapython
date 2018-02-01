@@ -1,11 +1,10 @@
 # EXCEL 2 LATEX SUB-FUNCTIONS
 ########################################################################################################################
-
 # This library file contains all the functions used by the Excel2LaTeXviaPython code
 
 import re           # For reading and processing text strings
 import openpyxl     # For obtaining the Excel file formatting
-
+import os           # Use for compiling PDF document
 
 def is_number(s):
     """
@@ -629,3 +628,51 @@ def create_column(table_in, col_idx):
         col += [table_in[row_num][col_idx]]
 
     return tuple(col)
+
+
+def create_pdf_of_tables(workbook, output_dir):
+    """
+    CREATE_PDF_OF_TABLES
+
+    Write and compile a LaTeX document of all the tables contained within the workbook. This is useful way to quickly
+    check all the output looks good
+
+    :param workbook: openpyxl workbook object
+    :param output_dir: [string] directory of where the output should be stored
+    :return: none. Complies PDF in output directory
+    """
+
+    tex_file = open(output_dir + 'output_all_tables.tex', 'w')
+
+    # Write LaTeX preamble
+
+    tex_file.write('\\documentclass[12pt]{article}\n\n')
+    tex_file.write('\\usepackage{booktabs}\n')
+    tex_file.write('\\usepackage[table]{xcolor}\n')
+    tex_file.write('\\usepackage{parskip}\n')
+
+    tex_file.write('\n\\begin{document}\n\n')
+
+    # Write Each table to the file
+    flag_first_table = True
+    for sheet_name in workbook.get_sheet_names():
+
+        if flag_first_table is False:
+            tex_file.write('\\newpage\n')
+        else:
+            flag_first_table = False
+
+        tex_file.write('Table: ' + sheet_name.replace('_', '\_') + '\n\n')
+        tex_file.write('\\input{' + sheet_name + '.tex}\n\n')
+
+    # Close file
+    tex_file.write('\\end{document}')
+    tex_file.close()
+
+    # Compile PDF and put in output directory
+    os.chdir(output_dir)
+    os.system('pdflatex "' + output_dir + 'output_all_tables.tex"')
+
+    # Clean up temp files
+    os.remove(output_dir + 'output_all_tables.aux')
+    os.remove(output_dir + 'output_all_tables.log')

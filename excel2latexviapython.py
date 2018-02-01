@@ -38,14 +38,20 @@ set_output_dir = 'D:/Users/Kirker/Google Drive/Git Repositories/excel2latexviapy
 #
 #   numdp: scalar
 #       Define how many d.p. to round numbers to if roundtpdp=True
-input_usr_settings = {'booktabs': True, 'includetabular': True, 'roundtodp': True, 'numdp': 3}
+#
+#   makepdf: True/False
+#       Make a PDF document containing all the tables. Useful for checking output quickly. Note, requires
+#       includetabular=True
+input_usr_settings = {'booktabs': True, 'includetabular': True, 'roundtodp': True, 'numdp': 3, 'makepdf': True}
 #
 # End of user input
 # ======================================================================================================================
 
 
-def excel2latexviapython(input_excel_filename, output_dir, booktabs=True, includetabular=True, roundtodp=True, numdp=3):
-    usr_settings = {'booktabs': booktabs, 'includetabular': includetabular, 'roundtodp': roundtodp, 'numdp': numdp}
+def excel2latexviapython(input_excel_filename, output_dir, booktabs=True, includetabular=True, roundtodp=True, numdp=3,
+                         makepdf=False):
+    usr_settings = {'booktabs': booktabs, 'includetabular': includetabular, 'roundtodp': roundtodp, 'numdp': numdp,
+                    'makepdf': makepdf}
 
     # PREAMBLE
     # ==================================================================================================================
@@ -201,10 +207,14 @@ def excel2latexviapython(input_excel_filename, output_dir, booktabs=True, includ
 
         file.close()  # Close off the current .tex file (completing the creation of the table code)
 
+    # Make PDF of the tables for checking purposes
+    if makepdf & includetabular:  # can only compile the tables if the tabular environment is included
+        e2l.create_pdf_of_tables(workbook, output_dir)
+
     print('\nCode has completed running')
 
 
 # Run the function
 excel2latexviapython(excel_filename, set_output_dir, booktabs=input_usr_settings['booktabs'],
                      includetabular=input_usr_settings['includetabular'], roundtodp=input_usr_settings['roundtodp'],
-                     numdp=input_usr_settings['numdp'])
+                     numdp=input_usr_settings['numdp'], makepdf=input_usr_settings['makepdf'])
