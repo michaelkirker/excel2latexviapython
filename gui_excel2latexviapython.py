@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import filedialog
-from sub_functions import e2lvp  # Model functions to simulate the LBH model
+import e2lvp  # Model functions to simulate the LBH model
 
 
 window = Tk()
