@@ -701,10 +701,8 @@ def excel2latexviapython(input_excel_filename, output_dir, booktabs=True, includ
         start_row_idx, start_col_idx, end_row_idx, end_col_idx = _get_table_dimensions(sheet)
 
         # Get the excel cell labels of the upper-left and bottom-right cells of the table
-        start_cell_label = list(sheet.rows)[start_row_idx][start_col_idx].column + str(list(sheet.rows)[start_row_idx]
-                                                                                       [start_col_idx].row)
-        end_cell_label = list(sheet.rows)[end_row_idx][end_col_idx].column + str(list(sheet.rows)[end_row_idx]
-                                                                                 [end_col_idx].row)
+        start_cell_label = list(sheet.rows)[start_row_idx][start_col_idx].coordinate
+        end_cell_label = list(sheet.rows)[end_row_idx][end_col_idx].coordinate
 
         # Get the number of columns and rows in the table
         num_cols = end_col_idx - start_col_idx + 1
@@ -715,9 +713,8 @@ def excel2latexviapython(input_excel_filename, output_dir, booktabs=True, includ
 
         # Print to the terminal the name of the table file that is being created this iteration and the excel cells
         # being used to create it
-        print('    ' + sheet_name + '.tex    ' + list(sheet.rows)[start_row_idx][start_col_idx].column +
-              str(list(sheet.rows)[start_row_idx][start_col_idx].row) + ':'
-              + list(sheet.rows)[end_row_idx][end_col_idx].column + str(list(sheet.rows)[end_row_idx][end_col_idx].row))
+        print('    ' + sheet_name + '.tex    ' + list(sheet.rows)[start_row_idx][start_col_idx].coordinate + ':'
+              + list(sheet.rows)[end_row_idx][end_col_idx].coordinate)
 
         # Create .tex file we will write to
         file = open(output_dir + sheet_name + '.tex', 'w')
