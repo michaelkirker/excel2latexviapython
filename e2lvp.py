@@ -153,7 +153,7 @@ def _tupple2latexstring(row_tup, usr_settings, merge_list):
 
             else:
 
-                if row_tup[colidx].fill.start_color.index is not '00000000':
+                if row_tup[colidx].fill.start_color.index != '00000000':
                     value_string = "\\cellcolor[HTML]{" + row_tup[colidx].fill.start_color.index[2:] + "}{" + \
                                    value_string + "}"
 
@@ -369,11 +369,9 @@ def _get_merged_cells(sheet):
 
     if len(sheet.merged_cell_ranges) == 0:
         return [[], [], [], [], []]  # No merged cells, so return an empty list
-
     for merge_ in sheet.merged_cell_ranges:  # For each merge in the sheet
-
         # Split the location string of the merge, and convert it it to an index number (e.g. "A3")
-        merge_loc_str = re.split(':', merge_)
+        merge_loc_str = re.split(':', str(merge_))
 
         # convert string to col/row index numbers
         start_coord = openpyxl.utils.coordinate_to_tuple(merge_loc_str[0])
@@ -400,7 +398,7 @@ def _get_merged_cells(sheet):
         # Get alignment
         halign = sheet[merge_loc_str[0]].alignment.__dict__['horizontal'][0]  # get the first letter
 
-        latex_code.append('\multicolumn{' + str(multi_col_length) + '}{' + halign + '}{' + value_string + '}')
+        latex_code.append('\multicolumn{' + str(multi_col_length) + '}{' + str(halign) + '}{' + str(value_string) + '}')
 
     return [start_row, start_col, end_row, end_col, latex_code]
 
@@ -717,7 +715,7 @@ def excel2latexviapython(input_excel_filename, output_dir, booktabs=True, includ
               + list(sheet.rows)[end_row_idx][end_col_idx].coordinate)
 
         # Create .tex file we will write to
-        file = open(output_dir + sheet_name + '.tex', 'w')
+        file = open(output_dir + '/' + sheet_name + '.tex', 'w')
 
         # Preamble of the individual table
         # --------------------------------

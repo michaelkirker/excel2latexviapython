@@ -23,6 +23,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+.DS_Store
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -95,3 +96,6 @@ Example/output_all_tables.out
 Example/output_all_tables.aux
 Example/output_all_tables.synctex
 *.aux
+
+# IDE file
+.idea/
