@@ -717,7 +717,7 @@ def excel2latexviapython(input_excel_filename, output_dir, booktabs=True, includ
               + list(sheet.rows)[end_row_idx][end_col_idx].coordinate)
 
         # Create .tex file we will write to
-        file = open(output_dir + sheet_name + '.tex', 'w')
+        file = open(output_dir + '\\' + sheet_name + '.tex', 'w')
 
         # Preamble of the individual table
         # --------------------------------
